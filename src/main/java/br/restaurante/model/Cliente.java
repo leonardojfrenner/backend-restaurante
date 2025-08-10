@@ -6,11 +6,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Column;
 import jakarta.persistence.Table;
-// import lombok.Data; // Descomente esta linha se o Lombok estiver funcionando
 
 @Entity
 @Table(name = "clientes")
-// @Data // Descomente esta linha se o Lombok estiver funcionando
 public class Cliente {
 
     @Id
@@ -31,6 +29,9 @@ public class Cliente {
 
     @Column(nullable = false)
     private String senha;
+
+    @Column(length = 9)
+    private String cep;
 
     // Campos de endereço
     @Column(length = 100)
@@ -58,7 +59,7 @@ public class Cliente {
     public Cliente() {
     }
 
-    public Cliente(Long id, String nome, String telefone, String cpf, String email, String senha,
+    public Cliente(Long id, String nome, String telefone, String cpf, String email, String senha,String cep,
                    String rua, String bairro, String cidade, String estado, String numero, boolean aceitaProtecaoDados,
                    boolean aceitaMarketing, boolean aceitaAtendimento) {
         this.id = id;
@@ -67,6 +68,7 @@ public class Cliente {
         this.cpf = cpf;
         this.email = email;
         this.senha = senha;
+        this.cep = cep;
         this.rua = rua;
         this.bairro = bairro;
         this.cidade = cidade;
@@ -120,6 +122,14 @@ public class Cliente {
 
     public String getSenha() {
         return senha;
+    }
+
+    public String getCep() {
+        return cep;
+    }
+
+    public void setCep(String cep) {
+        this.cep = cep;
     }
 
     public void setSenha(String senha) {

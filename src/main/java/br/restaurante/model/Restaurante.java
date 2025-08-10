@@ -28,6 +28,9 @@ public class Restaurante {
     @Column(length = 100)
     private String rua;
 
+    @Column(length = 6)
+    private Integer numero;
+
     @Column(length = 50)
     private String bairro;
 
@@ -71,7 +74,7 @@ public class Restaurante {
     public Restaurante() {
     }
 
-    public Restaurante(Long id, String nome, String cnpj, String telefone, String email, String rua, String bairro, String cidade, String estado,
+    public Restaurante(Long id, String nome, String cnpj, String telefone, String email, String rua,Integer numero, String bairro, String cidade, String estado,
                        String cep, String descricao, String horario, Integer lotacao, String site, String facebook, String instagram,
                        String whatsapp, String cardapioUrl, String logoUrl, String bannerUrl, boolean aceitaComunicacao, boolean aceitaMarketing,
                        boolean aceitaProtecaoDados) {
@@ -81,6 +84,7 @@ public class Restaurante {
         this.telefone = telefone;
         this.email = email;
         this.rua = rua;
+        this.numero = numero;
         this.bairro = bairro;
         this.cidade = cidade;
         this.estado = estado;
@@ -142,6 +146,14 @@ public class Restaurante {
 
     public String getRua() {
         return rua;
+    }
+
+    public Integer getNumero() {
+        return numero;
+    }
+
+    public void setNumero(Integer numero) {
+        this.numero = numero;
     }
 
     public void setRua(String rua) {

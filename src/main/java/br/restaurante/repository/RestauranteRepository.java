@@ -25,4 +25,6 @@ public interface RestauranteRepository extends JpaRepository<Restaurante, Long> 
 
     // Exemplo: buscar por nome (ignorando maiúsculas/minúsculas).
     List<Restaurante> findByNomeContainingIgnoreCase(String nome);
+
+    Optional<Restaurante> findByEmail(String email);
 }
