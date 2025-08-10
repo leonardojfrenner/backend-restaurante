@@ -7,9 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.InputMismatchException;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import java.util.List; // Adicionando import para buscar todos os clientes
 
 @Service
 public class ClienteService {
@@ -18,15 +18,8 @@ public class ClienteService {
     private ClienteRepository clienteRepository;
 
     @Autowired
-    private ViaCepService viaCepService; // Injetando o serviço do ViaCEP
+    private ViaCepService viaCepService;
 
-    /**
-     * Realiza o cadastro de um novo cliente, com validações de dados e programação defensiva.
-     * @param cliente O objeto Cliente a ser salvo.
-     * @return O objeto Cliente salvo com o ID gerado.
-     * @throws IllegalArgumentException se o CPF ou email já estiverem cadastrados.
-     * @throws InputMismatchException se os dados obrigatórios não forem preenchidos ou estiverem em formato incorreto.
-     */
     public Cliente cadastrarCliente(Cliente cliente) {
         // --- Programação Defensiva: Validação de dados de entrada ---
 
@@ -63,7 +56,6 @@ public class ClienteService {
         }
 
         // 5. Buscar e preencher o endereço a partir do CEP
-        // Adicionando a busca de CEP, se o campo for fornecido
         if (cliente.getCep() != null && !cliente.getCep().isBlank()) {
             Endereco endereco = viaCepService.buscaEnderecoPorCep(cliente.getCep());
             cliente.setRua(endereco.rua());
@@ -80,8 +72,40 @@ public class ClienteService {
         return clienteRepository.save(cliente);
     }
 
-    // Adicionando um método de busca para ler todos os clientes, para fins de teste
     public List<Cliente> buscarTodos() {
         return clienteRepository.findAll();
+    }
+
+    public Optional<Cliente> buscarPorId(Long id) {
+        return clienteRepository.findById(id);
+    }
+
+    public Optional<Cliente> atualizarCliente(Long id, Cliente clienteAtualizado) {
+        return clienteRepository.findById(id).map(clienteExistente -> {
+            clienteExistente.setNome(clienteAtualizado.getNome());
+            clienteExistente.setTelefone(clienteAtualizado.getTelefone());
+            clienteExistente.setEmail(clienteAtualizado.getEmail());
+            clienteExistente.setRua(clienteAtualizado.getRua());
+            clienteExistente.setBairro(clienteAtualizado.getBairro());
+            clienteExistente.setCidade(clienteAtualizado.getCidade());
+            clienteExistente.setEstado(clienteAtualizado.getEstado());
+            clienteExistente.setCep(clienteAtualizado.getCep());
+            clienteExistente.setNumero(clienteAtualizado.getNumero());
+            clienteExistente.setAceitaProtecaoDados(clienteAtualizado.isAceitaProtecaoDados());
+            clienteExistente.setAceitaMarketing(clienteAtualizado.isAceitaMarketing());
+            clienteExistente.setAceitaAtendimento(clienteAtualizado.isAceitaAtendimento());
+            // A senha não deve ser atualizada diretamente aqui por segurança
+            // A lógica de atualização de senha deve ser um endpoint separado
+            return clienteRepository.save(clienteExistente);
+        });
+    }
+
+    public boolean deletarCliente(Long id) {
+        Optional<Cliente> cliente = clienteRepository.findById(id);
+        if (cliente.isPresent()) {
+            clienteRepository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }

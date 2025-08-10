@@ -53,10 +53,6 @@ public class RestauranteService {
             restaurante.setBairro(endereco.bairro());
             restaurante.setCidade(endereco.cidade());
             restaurante.setEstado(endereco.estado());
-
-            // O número é um campo que o usuário preenche.
-            // A sua lógica já garante que ele será mantido
-            // no objeto `restaurante` que o front-end enviou.
         }
 
         // 5. Salvar a entidade no banco de dados
@@ -65,5 +61,37 @@ public class RestauranteService {
 
     public List<Restaurante> buscarTodos() {
         return restauranteRepository.findAll();
+    }
+
+    public Optional<Restaurante> buscarPorId(Long id) {
+        return restauranteRepository.findById(id);
+    }
+
+    public Optional<Restaurante> atualizarRestaurante(Long id, Restaurante restauranteAtualizado) {
+        return restauranteRepository.findById(id).map(restauranteExistente -> {
+            restauranteExistente.setNome(restauranteAtualizado.getNome());
+            restauranteExistente.setCnpj(restauranteAtualizado.getCnpj());
+            restauranteExistente.setEmail(restauranteAtualizado.getEmail());
+            restauranteExistente.setTelefone(restauranteAtualizado.getTelefone());
+            restauranteExistente.setRua(restauranteAtualizado.getRua());
+            restauranteExistente.setBairro(restauranteAtualizado.getBairro());
+            restauranteExistente.setCidade(restauranteAtualizado.getCidade());
+            restauranteExistente.setEstado(restauranteAtualizado.getEstado());
+            restauranteExistente.setCep(restauranteAtualizado.getCep());
+            restauranteExistente.setNumero(restauranteAtualizado.getNumero());
+            restauranteExistente.setAceitaComunicacao(restauranteAtualizado.isAceitaComunicacao());
+            restauranteExistente.setAceitaMarketing(restauranteAtualizado.isAceitaMarketing());
+            restauranteExistente.setAceitaProtecaoDados(restauranteAtualizado.isAceitaProtecaoDados());
+            return restauranteRepository.save(restauranteExistente);
+        });
+    }
+
+    public boolean deletarRestaurante(Long id) {
+        Optional<Restaurante> restaurante = restauranteRepository.findById(id);
+        if (restaurante.isPresent()) {
+            restauranteRepository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }
