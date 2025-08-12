@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Itens de Cardápio</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+        h2, h3 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #28a745;
+            color: white;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .actions-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .actions-buttons button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            margin: 0;
+        }
+        .actions-buttons .edit { background-color: #ffc107; }
+        .actions-buttons .delete { background-color: #dc3545; }
+        .actions-buttons .edit:hover { background-color: #e0a800; }
+        .actions-buttons .delete:hover { background-color: #c82333; }
+
+        .form-edit-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        .form-edit-section input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+<div id="cadastroItem" class="container">
+    <h2>Cadastrar Novo Item de Cardápio</h2>
+    <form id="formItem">
+        <label for="nomeItem">Nome:</label>
+        <input type="text" id="nomeItem" name="nome" required>
+        <label for="descricaoItem">Descrição/Ingredientes:</label>
+        <input type="text" id="descricaoItem" name="descricao">
+        <label for="precoItem">Preço:</label>
+        <input type="number" id="precoItem" name="preco" step="0.01" required>
+        <label for="imagemUrlItem">URL da Imagem:</label>
+        <input type="text" id="imagemUrlItem" name="imagemUrl">
+        <label for="restauranteIdItem">ID do Restaurante:</label>
+        <input type="number" id="restauranteIdItem" name="restaurante.id" required>
+        <div class="form-actions">
+            <button type="submit">Cadastrar Item</button>
+        </div>
+    </form>
+</div>
+
+<div id="gerenciarItens" class="container">
+    <h2>Gerenciamento de Itens do Cardápio</h2>
+    <table id="tabelaItens">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Preço</th>
+            <th>ID Restaurante</th>
+            <th>Ações</th>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <div id="formUpdateItem" class="form-edit-section" style="display: none;">
+        <h3>Atualizar Item</h3>
+        <form id="formItemUpdate">
+            <input type="hidden" id="updateIdItem" name="id">
+            <label for="updateNomeItem">Nome:</label>
+            <input type="text" id="updateNomeItem" name="nome">
+            <label for="updateDescricaoItem">Descrição/Ingredientes:</label>
+            <input type="text" id="updateDescricaoItem" name="descricao">
+            <label for="updatePrecoItem">Preço:</label>
+            <input type="number" id="updatePrecoItem" name="preco" step="0.01">
+            <label for="updateImagemUrlItem">URL da Imagem:</label>
+            <input type="text" id="updateImagemUrlItem" name="imagemUrl">
+            <button type="submit">Salvar Alterações</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        carregarItens();
+    });
+
+    // Função para carregar e exibir todos os itens do cardápio
+    async function carregarItens() {
+        const response = await fetch('/itens');
+        const itens = await response.json();
+        const tbody = document.querySelector('#tabelaItens tbody');
+        tbody.innerHTML = '';
+        itens.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.id}</td>
+                <td>${item.nome}</td>
+                <td>R$ ${item.preco.toFixed(2)}</td>
+                <td>${item.restaurante ? item.restaurante.id : 'N/A'}</td>
+                <td class="actions-buttons">
+                    <button class="edit" onclick="editarItem(${item.id}, '${item.nome}', '${item.descricao}', ${item.preco}, '${item.imagemUrl}')">Editar</button>
+                    <button class="delete" onclick="deletarItem(${item.id})">Excluir</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Lida com o envio do formulário de cadastro de item
+    document.getElementById('formItem').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const form = event.target;
+        const itemData = Object.fromEntries(new FormData(form).entries());
+
+        // Converte o campo 'restaurante.id' para um objeto aninhado
+        const restauranteId = itemData['restaurante.id'];
+        itemData.restaurante = { id: restauranteId };
+        delete itemData['restaurante.id'];
+
+        try {
+            const response = await fetch('/itens', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(itemData)
+            });
+
+            if (response.ok) {
+                alert('Item cadastrado com sucesso!');
+                form.reset();
+                carregarItens();
+            } else {
+                const errorData = await response.json();
+                alert('Erro ao cadastrar item: ' + (errorData.message || response.statusText));
+            }
+        } catch (error) {
+            alert('Erro na requisição: ' + error.message);
+        }
+    });
+
+    // Mostra o formulário de atualização com os dados do item
+    function editarItem(id, nome, descricao, preco, imagemUrl) {
+        document.getElementById('formUpdateItem').style.display = 'block';
+        document.getElementById('updateIdItem').value = id;
+        document.getElementById('updateNomeItem').value = nome;
+        document.getElementById('updateDescricaoItem').value = descricao;
+        document.getElementById('updatePrecoItem').value = preco;
+        document.getElementById('updateImagemUrlItem').value = imagemUrl;
+    }
+
+    // Lida com o envio do formulário de atualização de item
+    document.getElementById('formItemUpdate').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const id = document.getElementById('updateIdItem').value;
+        const form = event.target;
+        const itemData = Object.fromEntries(new FormData(form).entries());
+
+        const response = await fetch(`/itens/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(itemData)
+        });
+
+        if (response.ok) {
+            alert('Item atualizado com sucesso!');
+            document.getElementById('formUpdateItem').style.display = 'none';
+            carregarItens();
+        } else {
+            alert('Erro ao atualizar item.');
+        }
+    });
+
+    // Deleta um item
+    async function deletarItem(id) {
+        if (confirm('Tem certeza que deseja excluir este item?')) {
+            const response = await fetch(`/itens/${id}`, { method: 'DELETE' });
+            if (response.status === 204) {
+                alert('Item excluído com sucesso!');
+                carregarItens();
+            } else {
+                alert('Erro ao excluir item.');
+            }
+        }
+    }
+</script>
+
+</body>
+</html>

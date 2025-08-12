@@ -1,9 +1,9 @@
 package br.restaurante.service;
 
 import br.restaurante.model.AvaliacaoPrato;
-import br.restaurante.model.Prato;
+import br.restaurante.model.ItemRestaurante;
 import br.restaurante.repository.AvaliacaoPratoRepository;
-import br.restaurante.repository.PratoRepository;
+import br.restaurante.repository.ItemRestauranteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +19,7 @@ public class AvaliacaoPratoService {
     private AvaliacaoPratoRepository avaliacaoPratoRepository;
 
     @Autowired
-    private PratoRepository pratoRepository;
+    private ItemRestauranteRepository itemRestauranteRepository;
 
     /**
      * Realiza o cadastro de uma nova avaliação de prato, com validações de dados.
@@ -45,7 +45,7 @@ public class AvaliacaoPratoService {
             throw new InputMismatchException("É necessário associar a avaliação a um prato.");
         }
 
-        Optional<Prato> pratoExistente = pratoRepository.findById(avaliacaoPrato.getPrato().getId());
+        Optional<ItemRestaurante> pratoExistente = itemRestauranteRepository.findById(avaliacaoPrato.getPrato().getId());
         if (pratoExistente.isEmpty()) {
             throw new InputMismatchException("Prato não encontrado. Verifique o ID do prato.");
         }
@@ -63,10 +63,10 @@ public class AvaliacaoPratoService {
      * @return Uma lista de avaliações do prato.
      */
     public List<AvaliacaoPrato> buscarAvaliacoesPorPratoId(Long pratoId) {
-        Optional<Prato> prato = pratoRepository.findById(pratoId);
+        Optional<ItemRestaurante> prato = itemRestauranteRepository.findById(pratoId);
         if (prato.isEmpty()) {
             throw new InputMismatchException("Prato não encontrado.");
         }
-        return avaliacaoPratoRepository.findByPrato(prato.get());
+        return avaliacaoPratoRepository.findByItemRestauranteId(prato.get().getId());
     }
 }

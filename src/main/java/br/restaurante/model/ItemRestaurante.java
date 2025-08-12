@@ -5,25 +5,29 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
-public class Prato {
+public class ItemRestaurante {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String nome;
-    private String descricao;
-    private Double preco;
+    private String descricao; // Usado para 'ingredientes' no front-end
+
+    private Double preco; // Usado para 'valor' no front-end
+
+    @Column(length = 2048)
+    private String imagemUrl; // Novo campo para a imagem do front-end
 
     @ManyToOne
     @JoinColumn(name = "restaurante_id", nullable = false)
     private Restaurante restaurante;
 
-    @OneToMany(mappedBy = "prato", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "itemRestaurante", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AvaliacaoPrato> avaliacoes;
 
     // Construtor, getters e setters (gerados manualmente ou pelo Lombok)
 
-    public Prato() {}
+    public ItemRestaurante() {}
 
     public Long getId() {
         return id;
@@ -57,6 +61,14 @@ public class Prato {
         this.preco = preco;
     }
 
+    public String getImagemUrl() {
+        return imagemUrl;
+    }
+
+    public void setImagemUrl(String imagemUrl) {
+        this.imagemUrl = imagemUrl;
+    }
+
     public Restaurante getRestaurante() {
         return restaurante;
     }
@@ -69,13 +81,7 @@ public class Prato {
         return avaliacoes;
     }
 
-    // Setter ajustado para definir a lista completa
     public void setAvaliacoes(List<AvaliacaoPrato> avaliacoes) {
         this.avaliacoes = avaliacoes;
-    }
-
-    // Método opcional para adicionar uma avaliação individualmente
-    public void addAvaliacao(AvaliacaoPrato avaliacao) {
-        this.avaliacoes.add(avaliacao);
     }
 }

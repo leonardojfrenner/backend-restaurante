@@ -21,7 +21,7 @@ public class AvaliacaoPrato {
 
     @ManyToOne
     @JoinColumn(name = "prato_id", nullable = false)
-    private Prato prato;
+    private ItemRestaurante itemRestaurante;
 
     private LocalDateTime dataAvaliacao;
 
@@ -41,12 +41,12 @@ public class AvaliacaoPrato {
         this.nota = nota;
     }
 
-    public Prato getPrato() {
-        return prato;
+    public ItemRestaurante getPrato() {
+        return itemRestaurante;
     }
 
-    public void setPrato(Prato prato) {
-        this.prato = prato;
+    public void setPrato(ItemRestaurante itemRestaurante) {
+        this.itemRestaurante = itemRestaurante;
     }
 
     public String getComentario() {
