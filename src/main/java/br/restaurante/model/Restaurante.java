@@ -2,6 +2,7 @@ package br.restaurante.model;
 
 import jakarta.persistence.*;
 import lombok.Data; // Para simplificar getters e setters
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.List;
 
@@ -26,6 +27,7 @@ public class Restaurante {
     private String email;
 
     @Column(nullable = false)
+    @JsonIgnore
     private String senha;
 
     @Column(length = 100)
@@ -72,6 +74,7 @@ public class Restaurante {
     private boolean aceitaProtecaoDados;
 
     @OneToMany(mappedBy = "restaurante", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Avaliacao> avaliacoes;
 
     public Restaurante() {

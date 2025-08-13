@@ -1,9 +1,11 @@
 package br.restaurante.service;
 
+import br.restaurante.dto.LoginRequest;
 import br.restaurante.model.Cliente;
 import br.restaurante.model.Endereco;
 import br.restaurante.repository.ClienteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.InputMismatchException;
@@ -19,6 +21,9 @@ public class ClienteService {
 
     @Autowired
     private ViaCepService viaCepService;
+
+    @Autowired // Injete o password encoder
+    private BCryptPasswordEncoder passwordEncoder;
 
     public Cliente cadastrarCliente(Cliente cliente) {
         // --- Programação Defensiva: Validação de dados de entrada ---
@@ -62,15 +67,38 @@ public class ClienteService {
             cliente.setBairro(endereco.bairro());
             cliente.setCidade(endereco.cidade());
             cliente.setEstado(endereco.estado());
-            // O número do endereço deve vir do front-end e não é alterado aqui.
         }
 
-        // 6. Criptografar a senha (Atenção: A biblioteca de criptografia deve ser adicionada)
-        // ... (código para criptografia de senha, se você for usar) ...
+        // 6. Criptografar a senha antes de salvar
+        String senhaHash = passwordEncoder.encode(cliente.getSenha());
+        cliente.setSenha(senhaHash);
 
         // 7. Salvar a entidade no banco de dados
         return clienteRepository.save(cliente);
     }
+
+    /**
+     * Valida as credenciais do cliente para o login.
+     * @param loginRequest Objeto com email e senha.
+     * @return O objeto Cliente se as credenciais estiverem corretas, ou null.
+     */
+    public Cliente loginCliente(LoginRequest loginRequest) {
+        Optional<Cliente> clienteOptional = clienteRepository.findByEmail(loginRequest.getEmail());
+
+        if (clienteOptional.isPresent()) {
+            Cliente cliente = clienteOptional.get();
+            // Comparar a senha fornecida com a senha criptografada do banco de dados
+            if (passwordEncoder.matches(loginRequest.getSenha(), cliente.getSenha())) {
+                return cliente;
+            }
+        }
+        return null; // Retorna nulo se o email não for encontrado ou a senha estiver incorreta
+    }
+
+    public Optional<Cliente> buscarPorEmail(String email) {
+        return clienteRepository.findByEmail(email);
+    }
+
 
     public List<Cliente> buscarTodos() {
         return clienteRepository.findAll();

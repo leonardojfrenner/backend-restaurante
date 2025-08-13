@@ -3,6 +3,7 @@ package br.restaurante.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Data
@@ -20,13 +21,15 @@ public class Avaliacao {
 
     // Relacionamento com a entidade Restaurante
     @ManyToOne
+    @JsonIgnoreProperties({"avaliacoes", "senha"})
     @JoinColumn(name = "restaurante_id", nullable = false)
     private Restaurante restaurante;
 
-    // Você pode adicionar mais campos, como o usuário que fez a avaliação e a data
-    // @ManyToOne
-    // @JoinColumn(name = "cliente_id")
-    // private Cliente cliente;
+    // Relacionamento com a entidade Cliente que fez a avaliação
+    @ManyToOne
+    @JsonIgnoreProperties({"senha"})
+    @JoinColumn(name = "cliente_id", nullable = true)
+    private Cliente cliente;
 
     @Column(nullable = false)
     private LocalDateTime dataAvaliacao;
@@ -61,6 +64,14 @@ public class Avaliacao {
 
     public void setComentario(String comentario) {
         this.comentario = comentario;
+    }
+
+    public Cliente getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
     }
 
     public LocalDateTime getDataAvaliacao() {

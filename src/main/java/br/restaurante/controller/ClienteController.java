@@ -1,5 +1,6 @@
 package br.restaurante.controller;
 
+import br.restaurante.dto.LoginRequest;
 import br.restaurante.model.Cliente;
 import br.restaurante.service.ClienteService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,13 @@ import java.util.List;
 import java.util.InputMismatchException;
 import java.util.Map;
 import java.util.Optional;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @RestController
 @RequestMapping("/clientes")
@@ -17,6 +25,42 @@ public class ClienteController {
 
     @Autowired
     private ClienteService clienteService;
+
+    @PostMapping("/login") // Endpoint de login para clientes
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request, HttpServletResponse response) {
+        Cliente clienteLogado = clienteService.loginCliente(loginRequest);
+
+        if (clienteLogado != null) {
+            // Cria principal e autenticação para a sessão do Spring Security
+            UserDetails principal = User
+                    .withUsername(clienteLogado.getEmail())
+                    .password("N/A")
+                    .roles("USER")
+                    .build();
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+
+            SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+            securityContext.setAuthentication(authentication);
+            SecurityContextHolder.setContext(securityContext);
+
+            // Garante a criação da sessão e a emissão do cookie JSESSIONID e persiste o contexto
+            request.getSession(true);
+            org.springframework.security.web.context.HttpSessionSecurityContextRepository repo =
+                    new org.springframework.security.web.context.HttpSessionSecurityContextRepository();
+            repo.saveContext(securityContext, request, response);
+
+            // Login bem-sucedido
+            return ResponseEntity.ok(Map.of(
+                    "message", "Login realizado com sucesso",
+                    "email", clienteLogado.getEmail()
+            ));
+        } else {
+            // Login falhou
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Email ou senha incorretos."));
+        }
+    }
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Cliente cliente) {
