@@ -2,6 +2,7 @@ package br.restaurante.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -18,9 +19,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
                         // Libera todas as páginas e recursos estáticos
-                        .requestMatchers("/", "/index.html", "/clientes.html", "/restaurante.html", "/dados.html", "/itens.html", "/avaliacao.html", "/css/**", "/js/**").permitAll()
+						.requestMatchers("/", "/index.html", "/cadastro.html", "/clientes.html", "/restaurante.html", "/dados.html", "/itens.html", "/avaliacao.html", "/restaurantePerfil.html", "/css/**", "/js/**").permitAll()
                         // Libera todos os endpoints de clientes e restaurantes para acesso público
                         .requestMatchers("/clientes/**", "/restaurantes/**").permitAll()
+                        // Permite leitura pública de itens e avaliações (GET)
+                        .requestMatchers(HttpMethod.GET, "/itens/**", "/avaliacoes/**").permitAll()
                         // Garante que todas as outras requisições (como a de avaliações) exijam autenticação
                         .anyRequest().authenticated()
                 );

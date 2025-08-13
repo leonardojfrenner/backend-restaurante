@@ -3,6 +3,7 @@ package br.restaurante.model;
 import jakarta.persistence.*;
 import lombok.Data; // Para simplificar getters e setters
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
@@ -27,7 +28,7 @@ public class Restaurante {
     private String email;
 
     @Column(nullable = false)
-    @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String senha;
 
     @Column(length = 100)
