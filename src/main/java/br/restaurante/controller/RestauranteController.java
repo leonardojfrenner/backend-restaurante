@@ -1,5 +1,6 @@
 package br.restaurante.controller;
 
+import br.restaurante.dto.LoginRequest; // Adicione esta importação
 import br.restaurante.model.Restaurante;
 import br.restaurante.service.RestauranteService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,19 @@ public class RestauranteController {
     @Autowired
     private RestauranteService restauranteService;
 
+    @PostMapping("/login") // Endpoint de login
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        Restaurante restauranteLogado = restauranteService.loginRestaurante(loginRequest);
+
+        if (restauranteLogado != null) {
+            // Login bem-sucedido: retorna os dados do restaurante
+            return ResponseEntity.ok(restauranteLogado);
+        } else {
+            // Login falhou: retorna 401 Unauthorized
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Email ou senha incorretos."));
+        }
+    }
+
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Restaurante restaurante) {
         try {
@@ -29,6 +43,8 @@ public class RestauranteController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         }
     }
+
+    // ... (restante dos métodos do controller)
 
     @GetMapping
     public ResponseEntity<List<Restaurante>> readAll() {

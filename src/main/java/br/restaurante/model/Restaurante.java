@@ -25,6 +25,9 @@ public class Restaurante {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
+    @Column(nullable = false)
+    private String senha;
+
     @Column(length = 100)
     private String rua;
 
@@ -74,7 +77,7 @@ public class Restaurante {
     public Restaurante() {
     }
 
-    public Restaurante(Long id, String nome, String cnpj, String telefone, String email, String rua,Integer numero, String bairro, String cidade, String estado,
+    public Restaurante(Long id, String nome, String cnpj, String telefone, String email, String senha, String rua, Integer numero, String bairro, String cidade, String estado,
                        String cep, String descricao, String horario, Integer lotacao, String site, String facebook, String instagram,
                        String whatsapp, String cardapioUrl, String logoUrl, String bannerUrl, boolean aceitaComunicacao, boolean aceitaMarketing,
                        boolean aceitaProtecaoDados) {
@@ -83,6 +86,7 @@ public class Restaurante {
         this.cnpj = cnpj;
         this.telefone = telefone;
         this.email = email;
+        this.senha = senha;
         this.rua = rua;
         this.numero = numero;
         this.bairro = bairro;
@@ -142,6 +146,14 @@ public class Restaurante {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getSenha() {
+        return senha;
+    }
+
+    public void setSenha(String senha) {
+        this.senha = senha;
     }
 
     public String getRua() {

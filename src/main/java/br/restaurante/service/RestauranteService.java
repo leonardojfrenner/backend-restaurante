@@ -1,10 +1,12 @@
 package br.restaurante.service;
 
+import br.restaurante.dto.LoginRequest; // Adicione esta importação
 import br.restaurante.model.Endereco;
 import br.restaurante.model.Restaurante;
 import br.restaurante.repository.RestauranteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // Adicione esta importação
 
 import java.util.InputMismatchException;
 import java.util.List;
@@ -19,44 +21,66 @@ public class RestauranteService {
     @Autowired
     private ViaCepService viaCepService;
 
-    public Restaurante cadastrarRestaurante(Restaurante restaurante) {
-        // --- Programação Defensiva: Validação de dados de entrada ---
+    @Autowired // Injete o password encoder
+    private BCryptPasswordEncoder passwordEncoder;
 
-        // 1. Validar campos obrigatórios
+    public Restaurante cadastrarRestaurante(Restaurante restaurante) {
+        // ... (restante das validações)
         if (restaurante.getNome() == null || restaurante.getNome().isBlank() ||
                 restaurante.getCnpj() == null || restaurante.getCnpj().isBlank() ||
-                restaurante.getEmail() == null || restaurante.getEmail().isBlank()) {
-            throw new InputMismatchException("Os campos Nome, CNPJ e Email são obrigatórios.");
+                restaurante.getEmail() == null || restaurante.getEmail().isBlank() ||
+                restaurante.getSenha() == null || restaurante.getSenha().isBlank()) {
+            throw new InputMismatchException("Os campos Nome, CNPJ, Email e Senha são obrigatórios.");
         }
+        // ...
 
-        // 2. Limpar a formatação do CNPJ e validar o tamanho
-        String cnpjLimpo = restaurante.getCnpj().replaceAll("[^0-9]", "");
-        restaurante.setCnpj(cnpjLimpo);
-        if (cnpjLimpo.length() != 14) {
-            throw new InputMismatchException("O CNPJ deve conter 14 dígitos.");
-        }
+        // 4. Criptografar a senha antes de salvar
+        String senhaHash = passwordEncoder.encode(restaurante.getSenha());
+        restaurante.setSenha(senhaHash);
 
-        // 3. Verificar unicidade do CNPJ e Email
-        Optional<Restaurante> restauranteExistenteCnpj = restauranteRepository.findByCnpj(restaurante.getCnpj());
-        if (restauranteExistenteCnpj.isPresent()) {
-            throw new IllegalArgumentException("CNPJ já cadastrado.");
-        }
-        Optional<Restaurante> restauranteExistenteEmail = restauranteRepository.findByEmail(restaurante.getEmail());
-        if (restauranteExistenteEmail.isPresent()) {
-            throw new IllegalArgumentException("Email já cadastrado.");
-        }
-
-        // 4. Buscar e preencher o endereço a partir do CEP
-        if (restaurante.getCep() != null && !restaurante.getCep().isBlank()) {
-            Endereco endereco = viaCepService.buscaEnderecoPorCep(restaurante.getCep());
-            restaurante.setRua(endereco.rua());
-            restaurante.setBairro(endereco.bairro());
-            restaurante.setCidade(endereco.cidade());
-            restaurante.setEstado(endereco.estado());
-        }
+        // ... (restante do código)
 
         // 5. Salvar a entidade no banco de dados
         return restauranteRepository.save(restaurante);
+    }
+
+    /**
+     * Valida as credenciais do restaurante para o login.
+     * @param loginRequest Objeto com email e senha.
+     * @return O objeto Restaurante se as credenciais estiverem corretas, ou null.
+     */
+    public Restaurante loginRestaurante(LoginRequest loginRequest) {
+        Optional<Restaurante> restauranteOptional = restauranteRepository.findByEmail(loginRequest.getEmail());
+
+        if (restauranteOptional.isPresent()) {
+            Restaurante restaurante = restauranteOptional.get();
+            // Comparar a senha fornecida com a senha criptografada do banco de dados
+            if (passwordEncoder.matches(loginRequest.getSenha(), restaurante.getSenha())) {
+                return restaurante;
+            }
+        }
+        return null; // Retorna nulo se o email não for encontrado ou a senha estiver incorreta
+    }
+
+    // ... (restante dos métodos existentes)
+
+    // O método 'atualizarRestaurante' precisa ser ajustado para não sobrescrever a senha
+    // sem uma verificação. Isso geralmente requer uma lógica mais complexa, mas
+    // por enquanto, vamos apenas garantir que a senha não seja atualizada de forma acidental.
+    public Optional<Restaurante> atualizarRestaurante(Long id, Restaurante restauranteAtualizado) {
+        return restauranteRepository.findById(id).map(restauranteExistente -> {
+            // ... (copiar todos os outros campos, exceto a senha)
+            restauranteExistente.setNome(restauranteAtualizado.getNome());
+            restauranteExistente.setCnpj(restauranteAtualizado.getCnpj());
+            restauranteExistente.setEmail(restauranteAtualizado.getEmail());
+            restauranteExistente.setTelefone(restauranteAtualizado.getTelefone());
+            // ... e os outros campos
+
+            // A senha não deve ser atualizada aqui. Geralmente, existe um endpoint
+            // separado para isso.
+
+            return restauranteRepository.save(restauranteExistente);
+        });
     }
 
     public List<Restaurante> buscarTodos() {
@@ -65,25 +89,6 @@ public class RestauranteService {
 
     public Optional<Restaurante> buscarPorId(Long id) {
         return restauranteRepository.findById(id);
-    }
-
-    public Optional<Restaurante> atualizarRestaurante(Long id, Restaurante restauranteAtualizado) {
-        return restauranteRepository.findById(id).map(restauranteExistente -> {
-            restauranteExistente.setNome(restauranteAtualizado.getNome());
-            restauranteExistente.setCnpj(restauranteAtualizado.getCnpj());
-            restauranteExistente.setEmail(restauranteAtualizado.getEmail());
-            restauranteExistente.setTelefone(restauranteAtualizado.getTelefone());
-            restauranteExistente.setRua(restauranteAtualizado.getRua());
-            restauranteExistente.setBairro(restauranteAtualizado.getBairro());
-            restauranteExistente.setCidade(restauranteAtualizado.getCidade());
-            restauranteExistente.setEstado(restauranteAtualizado.getEstado());
-            restauranteExistente.setCep(restauranteAtualizado.getCep());
-            restauranteExistente.setNumero(restauranteAtualizado.getNumero());
-            restauranteExistente.setAceitaComunicacao(restauranteAtualizado.isAceitaComunicacao());
-            restauranteExistente.setAceitaMarketing(restauranteAtualizado.isAceitaMarketing());
-            restauranteExistente.setAceitaProtecaoDados(restauranteAtualizado.isAceitaProtecaoDados());
-            return restauranteRepository.save(restauranteExistente);
-        });
     }
 
     public boolean deletarRestaurante(Long id) {
