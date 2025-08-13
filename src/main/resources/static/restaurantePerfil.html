@@ -52,7 +52,22 @@
             }
             itens.forEach(i => {
                 const li = document.createElement('li');
-                li.innerHTML = `<strong>${i.nome}</strong> - R$ ${Number(i.preco || 0).toFixed(2)}<br><span class="muted">${fmt(i.descricao)}</span>${i.imagemUrl ? `<br><img src="${i.imagemUrl}" alt="${i.nome}"/>` : ''}`;
+                li.innerHTML = `
+                    <strong>${i.nome}</strong> - R$ ${Number(i.preco || 0).toFixed(2)}
+                    <br><span class="muted">${fmt(i.descricao)}</span>
+                    ${i.imagemUrl ? `<br><img src="${i.imagemUrl}" alt="${i.nome}"/>` : ''}
+                    <br>
+                    <button data-add-item>Adicionar</button>
+                `;
+                li.querySelector('[data-add-item]').addEventListener('click', async () => {
+                    try {
+                        await requireAuthOrRedirect();
+                        const qtdStr = prompt('Quantidade', '1');
+                        const qtd = Math.max(1, parseInt(qtdStr || '1', 10));
+                        const obs = prompt('Observações (opcional)', '') || '';
+                        addToCart({ itemRestauranteId: i.id, nome: i.nome, quantidade: qtd, observacoes: obs });
+                    } catch(_) {}
+                });
                 ul.appendChild(li);
             });
         }
@@ -73,6 +88,97 @@
             });
         }
 
+        const carrinho = [];
+
+        function refreshCartUI() {
+            const list = document.getElementById('cartList');
+            const totalEl = document.getElementById('cartTotal');
+            list.innerHTML = '';
+            if (carrinho.length === 0) {
+                list.innerHTML = '<li class="muted">Carrinho vazio</li>';
+                totalEl.textContent = '0 itens';
+                return;
+            }
+            let totalItens = 0;
+            carrinho.forEach((c, idx) => {
+                totalItens += c.quantidade || 0;
+                const li = document.createElement('li');
+                li.innerHTML = `${c.nome} x ${c.quantidade} ${c.observacoes ? `- <span class="muted">${c.observacoes}</span>` : ''} <button data-rm>remover</button>`;
+                li.querySelector('[data-rm]').addEventListener('click', () => {
+                    carrinho.splice(idx, 1);
+                    refreshCartUI();
+                });
+                list.appendChild(li);
+            });
+            totalEl.textContent = `${totalItens} item(ns)`;
+        }
+
+        function addToCart(entry) {
+            carrinho.push(entry);
+            refreshCartUI();
+            const msg = document.getElementById('erro');
+            msg.textContent = 'Item adicionado ao carrinho';
+            setTimeout(() => { msg.textContent = ''; }, 1200);
+        }
+
+        async function requireAuthOrRedirect() {
+            // Verifica se está logado tentando acessar /pedidos (GET exige auth)
+            const res = await fetch('/pedidos', { credentials: 'include' });
+            if (res.status === 401) {
+                const current = encodeURIComponent(window.location.pathname + window.location.search);
+                window.location.href = `/clientes.html?redirect=${current}`;
+                throw new Error('Redirecionando para login');
+            }
+        }
+
+        async function finalizarPedido(restauranteId) {
+            if (carrinho.length === 0) return;
+            const payload = {
+                restauranteId: Number(restauranteId),
+                observacoesGerais: '',
+                itens: carrinho.map(i => ({
+                    itemRestauranteId: i.itemRestauranteId,
+                    quantidade: i.quantidade,
+                    observacoes: i.observacoes
+                }))
+            };
+
+            const res = await fetch('/pedidos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            });
+            if (res.status === 401) {
+                const current = encodeURIComponent(window.location.pathname + window.location.search);
+                window.location.href = `/clientes.html?redirect=${current}`;
+                return;
+            }
+            if (!res.ok) {
+                const ct = res.headers.get('content-type') || '';
+                let msg = 'Falha ao criar pedido';
+                if (ct.includes('application/json')) {
+                    const j = await res.json();
+                    msg = j.message || msg;
+                } else {
+                    msg = await res.text();
+                }
+                throw new Error(msg);
+            }
+            let pedido;
+            const ct2 = res.headers.get('content-type') || '';
+            if (ct2.includes('application/json')) {
+                pedido = await res.json();
+            } else {
+                const t = await res.text();
+                try { pedido = JSON.parse(t); } catch { pedido = { id: '?' }; }
+            }
+            carrinho.splice(0, carrinho.length);
+            refreshCartUI();
+            const msg = document.getElementById('erro');
+            msg.textContent = `Pedido criado com sucesso (ID ${pedido.id})`;
+        }
+
         async function init() {
             const id = getQueryParam('id');
             if (!id) {
@@ -86,8 +192,18 @@
                     fetchJson(`/avaliacoes/${id}`)
                 ]);
                 renderRestaurante(restaurante);
+                const link = document.getElementById('linkAvaliar');
+                if (link) { link.href = `/avaliacao.html?restauranteId=${id}`; }
                 renderItens(itens);
                 renderAvaliacoes(avaliacoes);
+                document.getElementById('btnFinalizar').addEventListener('click', async () => {
+                    try {
+                        await requireAuthOrRedirect();
+                        await finalizarPedido(id);
+                    } catch (e) {
+                        document.getElementById('erro').textContent = e.message;
+                    }
+                });
             } catch (e) {
                 document.getElementById('erro').textContent = e.message;
             }
@@ -102,6 +218,7 @@
         <div class="grid">
             <div class="card">
                 <h1 id="nome">Restaurante</h1>
+                <a id="linkAvaliar" class="muted" href="#">Avaliar este restaurante</a>
                 <div class="row">
                     <img id="logo" alt="logo" style="max-width:120px"/>
                     <img id="banner" alt="banner"/>
@@ -119,6 +236,12 @@
         <div class="card" style="margin-top:20px;">
             <h2>Avaliações</h2>
             <ul id="avaliacoes"></ul>
+        </div>
+        <div class="card" style="margin-top:20px;">
+            <h2>Carrinho</h2>
+            <ul id="cartList"></ul>
+            <p class="muted" id="cartTotal">0 itens</p>
+            <button id="btnFinalizar">Finalizar Pedido</button>
         </div>
     </div>
 </body>

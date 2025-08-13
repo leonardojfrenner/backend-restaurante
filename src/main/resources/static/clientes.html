@@ -107,9 +107,10 @@
                 // Se o login falhou, o servidor envia um erro
                 return response.json().then(error => { throw new Error(error.message) });
             }
-            // Se o login foi bem-sucedido, redirecionamos o usuário
-            // para a página de avaliação.
-            window.location.href = '/avaliacao.html';
+            // Se o login foi bem-sucedido, redireciona para a URL desejada (se houver)
+            const params = new URLSearchParams(window.location.search);
+            const redirect = params.get('redirect');
+            window.location.href = redirect ? redirect : '/index.html';
             return {}; // Retorna um objeto vazio para não quebrar a Promise
         })
         .catch(error => {

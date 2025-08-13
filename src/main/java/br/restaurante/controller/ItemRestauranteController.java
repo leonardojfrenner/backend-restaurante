@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/itens")
+@RequestMapping(value = "/itens", produces = "application/json")
 public class ItemRestauranteController {
 
     @Autowired
@@ -57,9 +57,7 @@ public class ItemRestauranteController {
     @GetMapping("/restaurante/{restauranteId}")
     public ResponseEntity<List<ItemRestaurante>> buscarItensPorRestaurante(@PathVariable Long restauranteId) {
         List<ItemRestaurante> itens = itemRestauranteService.buscarItensPorRestaurante(restauranteId);
-        if (itens.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+        // Para coleções, é melhor retornar 200 com array vazio do que 404
         return ResponseEntity.ok(itens);
     }
 }

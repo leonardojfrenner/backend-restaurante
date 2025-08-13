@@ -2,6 +2,7 @@ package br.restaurante.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.LocalDateTime;
 
@@ -21,7 +22,13 @@ public class AvaliacaoPrato {
 
     @ManyToOne
     @JoinColumn(name = "prato_id", nullable = false)
+    @JsonIgnoreProperties({"avaliacoes", "restaurante"})
     private ItemRestaurante itemRestaurante;
+
+    @ManyToOne
+    @JoinColumn(name = "cliente_id", nullable = true)
+    @JsonIgnoreProperties({"senha"})
+    private Cliente cliente;
 
     private LocalDateTime dataAvaliacao;
 
@@ -63,5 +70,13 @@ public class AvaliacaoPrato {
 
     public void setDataAvaliacao(LocalDateTime dataAvaliacao) {
         this.dataAvaliacao = dataAvaliacao;
+    }
+
+    public Cliente getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
     }
 }

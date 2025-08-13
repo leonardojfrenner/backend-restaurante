@@ -105,6 +105,13 @@
     // Desabilita o formulário até selecionar um restaurante
     formEl.querySelectorAll('input, textarea, button').forEach(el => el.disabled = true);
 
+    // Predefine restaurante via query param, se houver
+    const params = new URLSearchParams(window.location.search);
+    const preId = params.get('restauranteId');
+    if (preId) {
+        document.getElementById('restauranteId').value = preId;
+    }
+
     // Carrega restaurantes
     fetch('/restaurantes', { credentials: 'include' })
         .then(async response => {
@@ -121,6 +128,10 @@
                 opt.textContent = r.nome;
                 restauranteSelect.appendChild(opt);
             });
+            if (preId) {
+                restauranteSelect.value = preId;
+                formEl.querySelectorAll('input, textarea, button').forEach(el => el.disabled = false);
+            }
         })
         .catch(err => {
             messageDiv.className = 'message error';

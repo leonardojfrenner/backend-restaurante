@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/avaliacoes")
+@RequestMapping(value = "/avaliacoes", produces = "application/json")
 public class AvaliacaoController {
 
     @Autowired

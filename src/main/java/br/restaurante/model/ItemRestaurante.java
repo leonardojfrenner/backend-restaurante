@@ -1,6 +1,8 @@
 package br.restaurante.model;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
 
@@ -20,9 +22,11 @@ public class ItemRestaurante {
 
     @ManyToOne
     @JoinColumn(name = "restaurante_id", nullable = false)
+    @JsonIgnoreProperties({"avaliacoes", "senha"})
     private Restaurante restaurante;
 
     @OneToMany(mappedBy = "itemRestaurante", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<AvaliacaoPrato> avaliacoes;
 
     // Construtor, getters e setters (gerados manualmente ou pelo Lombok)

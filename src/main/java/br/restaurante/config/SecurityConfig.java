@@ -19,12 +19,18 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
                         // Libera todas as páginas e recursos estáticos
-						.requestMatchers("/", "/index.html", "/cadastro.html", "/clientes.html", "/restaurante.html", "/dados.html", "/itens.html", "/avaliacao.html", "/restaurantePerfil.html", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/", "/index.html", "/cadastro.html", "/clientes.html", "/restaurante.html", "/dados.html", "/itens.html", "/avaliacao.html", "/restaurantePerfil.html", "/pedidos.html", "/css/**", "/js/**").permitAll()
                         // Libera todos os endpoints de clientes e restaurantes para acesso público
                         .requestMatchers("/clientes/**", "/restaurantes/**").permitAll()
                         // Permite leitura pública de itens e avaliações (GET)
+                        .requestMatchers(HttpMethod.GET, "/itens/**", "/avaliacoes/**", "/avaliacoes-prato/**").permitAll()
+                        // Libera gerenciamento de itens via páginas estáticas (POST/PUT/DELETE)
+                        .requestMatchers(HttpMethod.POST, "/itens/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/itens/**").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/itens/**").permitAll()
+                        // Permite leitura pública de itens e avaliações (GET)
                         .requestMatchers(HttpMethod.GET, "/itens/**", "/avaliacoes/**").permitAll()
-                        // Garante que todas as outras requisições (como a de avaliações) exijam autenticação
+                        // Garante que pedidos exijam autenticação
                         .anyRequest().authenticated()
                 );
         return http.build();

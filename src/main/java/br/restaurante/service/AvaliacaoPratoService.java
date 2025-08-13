@@ -2,8 +2,12 @@ package br.restaurante.service;
 
 import br.restaurante.model.AvaliacaoPrato;
 import br.restaurante.model.ItemRestaurante;
+import br.restaurante.model.Pedido;
+import br.restaurante.model.Cliente;
 import br.restaurante.repository.AvaliacaoPratoRepository;
 import br.restaurante.repository.ItemRestauranteRepository;
+import br.restaurante.repository.PedidoRepository;
+import br.restaurante.repository.ClienteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,13 +25,19 @@ public class AvaliacaoPratoService {
     @Autowired
     private ItemRestauranteRepository itemRestauranteRepository;
 
+    @Autowired
+    private PedidoRepository pedidoRepository;
+
+    @Autowired
+    private ClienteRepository clienteRepository;
+
     /**
      * Realiza o cadastro de uma nova avaliação de prato, com validações de dados.
      * @param avaliacaoPrato O objeto AvaliacaoPrato a ser salvo.
      * @return O objeto AvaliacaoPrato salvo com o ID gerado.
      * @throws InputMismatchException se os campos obrigatórios não forem preenchidos, a nota for inválida ou o prato não for encontrado.
      */
-    public AvaliacaoPrato cadastrarAvaliacaoPrato(AvaliacaoPrato avaliacaoPrato) {
+    public AvaliacaoPrato cadastrarAvaliacaoPrato(AvaliacaoPrato avaliacaoPrato, String emailCliente) {
         // --- Programação Defensiva: Validação de dados de entrada ---
 
         // 1. Validar campos obrigatórios
@@ -50,10 +60,15 @@ public class AvaliacaoPratoService {
             throw new InputMismatchException("Prato não encontrado. Verifique o ID do prato.");
         }
 
-        // 4. Preencher a data da avaliação automaticamente
+        // 4. Amarrar o cliente à avaliação
+        Cliente cliente = clienteRepository.findByEmail(emailCliente)
+                .orElseThrow(() -> new InputMismatchException("Cliente não encontrado."));
+        avaliacaoPrato.setCliente(cliente);
+
+        // 5. Preencher a data da avaliação automaticamente
         avaliacaoPrato.setDataAvaliacao(LocalDateTime.now());
 
-        // 5. Salvar a entidade no banco de dados
+        // 6. Salvar a entidade no banco de dados
         return avaliacaoPratoRepository.save(avaliacaoPrato);
     }
 
@@ -68,5 +83,16 @@ public class AvaliacaoPratoService {
             throw new InputMismatchException("Prato não encontrado.");
         }
         return avaliacaoPratoRepository.findByItemRestauranteId(prato.get().getId());
+    }
+
+    public boolean clienteConcluiuPedidoComItem(String emailCliente, Long itemRestauranteId) {
+        Cliente cliente = clienteRepository.findByEmail(emailCliente)
+                .orElseThrow(() -> new InputMismatchException("Cliente não encontrado."));
+        List<Pedido> pedidos = pedidoRepository.findByClienteOrderByCriadoEmDesc(cliente);
+        return pedidos.stream()
+                .filter(p -> "CONCLUIDO".equalsIgnoreCase(p.getStatus()))
+                .anyMatch(p -> p.getItens() != null && p.getItens().stream()
+                        .anyMatch(ip -> ip.getItemRestaurante() != null &&
+                                itemRestauranteId.equals(ip.getItemRestaurante().getId())));
     }
 }
