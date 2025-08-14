@@ -18,6 +18,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+
 
 @RestController
 @RequestMapping("/clientes")
@@ -60,6 +63,31 @@ public class ClienteController {
             // Login falhou
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Email ou senha incorretos."));
         }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> me(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String email = authentication.getName();
+        return ResponseEntity.ok(Map.of(
+                "email", email
+                // se quiser retornar o nome também, busque no service por email e inclua "nome"
+        ));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+        new SecurityContextLogoutHandler().logout(request, response, null);
+        return ResponseEntity.ok(Map.of("message", "Logout realizado com sucesso"));
+    }
+
+    // Opcional: permitir GET para facilitar testes via navegador
+    @GetMapping("/logout")
+    public ResponseEntity<?> logoutGet(HttpServletRequest request, HttpServletResponse response) {
+        new SecurityContextLogoutHandler().logout(request, response, null);
+        return ResponseEntity.ok(Map.of("message", "Logout realizado com sucesso"));
     }
 
     @PostMapping

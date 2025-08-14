@@ -3,6 +3,7 @@ package br.restaurante.controller;
 import br.restaurante.dto.LoginRequest; // Adicione esta importação
 import br.restaurante.model.Restaurante;
 import br.restaurante.service.RestauranteService;
+import br.restaurante.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,9 @@ public class RestauranteController {
 
     @Autowired
     private RestauranteService restauranteService;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @PostMapping("/login") // Endpoint de login
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
@@ -40,6 +44,27 @@ public class RestauranteController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
         } catch (InputMismatchException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping(value = "/upload/{tipo}", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> uploadByTipo(@PathVariable String tipo, @RequestPart("file") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            String url = fileStorageService.saveFile(file, tipo);
+            return ResponseEntity.ok(Map.of("url", url));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> uploadSemTipo(@RequestParam(value = "tipo", required = false) String tipo,
+                                           @RequestPart("file") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            String url = fileStorageService.saveFile(file, tipo);
+            return ResponseEntity.ok(Map.of("url", url));
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         }
     }
