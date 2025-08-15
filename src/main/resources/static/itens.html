@@ -113,10 +113,12 @@
         <input type="text" id="descricaoItem" name="descricao">
         <label for="precoItem">Preço:</label>
         <input type="number" id="precoItem" name="preco" step="0.01" required>
-        <label for="imagemUrlItem">URL da Imagem:</label>
-        <input type="text" id="imagemUrlItem" name="imagemUrl">
-        <label for="restauranteIdItem">ID do Restaurante:</label>
-        <input type="number" id="restauranteIdItem" name="restaurante.id" required>
+        <label for="imagemFileItem">Subir Foto:</label>
+        <input type="file" id="imagemFileItem" name="imagemFile" accept="image/*">
+        <label for="restauranteSelect">Restaurante:</label>
+        <select id="restauranteSelect" name="restaurante.id" required>
+            <option value="">Selecione um restaurante</option>
+        </select>
         <div class="form-actions">
             <button type="submit">Cadastrar Item</button>
         </div>
@@ -132,6 +134,7 @@
             <th>Nome</th>
             <th>Preço</th>
             <th>ID Restaurante</th>
+            <th>Imagem</th>
             <th>Ações</th>
         </tr>
         </thead>
@@ -158,13 +161,29 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        carregarItens();
-    });
+    // Chamadas para carregar dados ao iniciar a página
+    carregarRestaurantes();
+    carregarItens();
+});
 
+// Nova função para buscar e popular o dropdown de restaurantes
+async function carregarRestaurantes() {
+    const response = await fetch('/restaurantes');
+    const restaurantes = await response.json();
+    const select = document.getElementById('restauranteSelect');
+
+    restaurantes.forEach(restaurante => {
+        const option = document.createElement('option');
+        option.value = restaurante.id;
+        option.textContent = restaurante.nome;
+        select.appendChild(option);
+    });
+}
     // Função para carregar e exibir todos os itens do cardápio
     async function carregarItens() {
         const response = await fetch('/itens');
         const itens = await response.json();
+        console.log('Itens carregados:', itens); // Debug
         const tbody = document.querySelector('#tabelaItens tbody');
         tbody.innerHTML = '';
         itens.forEach(item => {
@@ -174,8 +193,9 @@
                 <td>${item.nome}</td>
                 <td>R$ ${item.preco.toFixed(2)}</td>
                 <td>${item.restaurante ? item.restaurante.id : 'N/A'}</td>
+                <td>${item.imagemUrl ? `<a href="${item.imagemUrl}" target="_blank">Ver imagem</a>` : 'Sem imagem'}</td>
                 <td class="actions-buttons">
-                    <button class="edit" onclick="editarItem(${item.id}, '${item.nome}', '${item.descricao}', ${item.preco}, '${item.imagemUrl}')">Editar</button>
+                    <button class="edit" onclick="editarItem(${item.id}, '${item.nome}', '${item.descricao}', ${item.preco}, '${item.imagemUrl || ''}')">Editar</button>
                     <button class="delete" onclick="deletarItem(${item.id})">Excluir</button>
                 </td>
             `;
@@ -183,36 +203,73 @@
         });
     }
 
-    // Lida com o envio do formulário de cadastro de item
     document.getElementById('formItem').addEventListener('submit', async function(event) {
-        event.preventDefault();
-        const form = event.target;
-        const itemData = Object.fromEntries(new FormData(form).entries());
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
 
-        // Converte o campo 'restaurante.id' para um objeto aninhado
-        const restauranteId = itemData['restaurante.id'];
-        itemData.restaurante = { id: restauranteId };
-        delete itemData['restaurante.id'];
+    const imagemFile = formData.get('imagemFile');
+    let imagemUrl = '';
 
+    // Lógica para enviar a imagem primeiro, se um arquivo for selecionado
+    if (imagemFile && imagemFile.name) {
+        console.log('Arquivo selecionado:', imagemFile.name, 'Tamanho:', imagemFile.size); // Debug
         try {
-            const response = await fetch('/itens', {
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', imagemFile);
+
+            console.log('Enviando arquivo para upload...'); // Debug
+
+            const uploadResponse = await fetch('/itens/upload', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(itemData)
+                body: uploadFormData // Não defina 'Content-Type', o navegador faz isso
             });
 
-            if (response.ok) {
-                alert('Item cadastrado com sucesso!');
-                form.reset();
-                carregarItens();
+            if (uploadResponse.ok) {
+                const data = await uploadResponse.json();
+                imagemUrl = data.url; // Pega a URL real da resposta
+                console.log('Upload bem-sucedido! URL da imagem:', imagemUrl); // Debug
             } else {
-                const errorData = await response.json();
-                alert('Erro ao cadastrar item: ' + (errorData.message || response.statusText));
+                const errorData = await uploadResponse.json();
+                alert('Erro ao fazer upload da imagem: ' + (errorData.message || 'Erro desconhecido.'));
+                return; // Para a execução se o upload falhar
             }
         } catch (error) {
-            alert('Erro na requisição: ' + error.message);
+            alert('Erro na requisição de upload: ' + error.message);
+            return;
         }
-    });
+    }
+
+    // Agora, construímos o objeto JSON com a URL real (ou vazia) para enviar os dados do item
+    const itemData = {
+        nome: formData.get('nome'),
+        descricao: formData.get('descricao'),
+        preco: parseFloat(formData.get('preco')),
+        imagemUrl: imagemUrl || '', // Usa a URL obtida ou uma string vazia
+        restaurante: { id: parseInt(formData.get('restaurante.id')) }
+    };
+
+    console.log('Dados do item a serem enviados:', itemData); // Debug
+
+    try {
+        const response = await fetch('/itens', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(itemData)
+        });
+
+        if (response.ok) {
+            alert('Item cadastrado com sucesso!');
+            form.reset();
+            carregarItens();
+        } else {
+            const errorData = await response.json();
+            alert('Erro ao cadastrar item: ' + (errorData.message || response.statusText));
+        }
+    } catch (error) {
+        alert('Erro na requisição de cadastro: ' + error.message);
+    }
+});
 
     // Mostra o formulário de atualização com os dados do item
     function editarItem(id, nome, descricao, preco, imagemUrl) {
