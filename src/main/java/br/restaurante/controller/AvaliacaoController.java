@@ -51,6 +51,12 @@ public class AvaliacaoController {
         }
     }
 
+    @GetMapping
+    public ResponseEntity<List<Avaliacao>> listarTodasAvaliacoes() {
+        List<Avaliacao> listaDeAvaliacoes = avaliacaoService.buscarTodasAsAvaliacoes();
+        return ResponseEntity.ok(listaDeAvaliacoes);
+    }
+
     // Você também pode adicionar outros endpoints, como buscar uma avaliação por ID,
     // ou deletar uma avaliação, usando os métodos que o JpaRepository oferece.
     // Exemplo:

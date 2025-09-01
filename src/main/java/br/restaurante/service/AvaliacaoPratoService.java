@@ -95,4 +95,10 @@ public class AvaliacaoPratoService {
                         .anyMatch(ip -> ip.getItemRestaurante() != null &&
                                 itemRestauranteId.equals(ip.getItemRestaurante().getId())));
     }
+
+    // Dentro da classe AvaliacaoPratoService
+
+    public List<AvaliacaoPrato> buscarTodasAvaliacoes() {
+        return avaliacaoPratoRepository.findAll(); // Assume que avaliacaoPratoRepository é uma instância de um JpaRepository
+    }
 }

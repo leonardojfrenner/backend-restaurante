@@ -49,5 +49,11 @@ public class AvaliacaoPratoController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
         }
     }
+
+    @GetMapping
+    public ResponseEntity<List<AvaliacaoPrato>> listarTodos() {
+        List<AvaliacaoPrato> lista = avaliacaoPratoService.buscarTodasAvaliacoes();
+        return ResponseEntity.ok(lista);
+    }
 }
 

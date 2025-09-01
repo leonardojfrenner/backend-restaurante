@@ -73,4 +73,8 @@ public class AvaliacaoService {
     public java.util.Optional<Long> buscarClienteIdPorEmail(String email) {
         return clienteRepository.findByEmail(email).map(Cliente::getId);
     }
+
+    public List<Avaliacao> buscarTodasAsAvaliacoes() {
+        return avaliacaoRepository.findAll();
+    }
 }
