@@ -1,6 +1,6 @@
 package br.restaurante.controller;
 
-import br.restaurante.dto.LoginRequest; // Adicione esta importação
+import br.restaurante.dto.LoginRequest;
 import br.restaurante.model.Restaurante;
 import br.restaurante.service.RestauranteService;
 import br.restaurante.service.FileStorageService;
@@ -12,6 +12,13 @@ import java.util.List;
 import java.util.InputMismatchException;
 import java.util.Map;
 import java.util.Optional;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @RestController
 @RequestMapping(value = "/restaurantes", produces = "application/json")
@@ -24,10 +31,30 @@ public class RestauranteController {
     private FileStorageService fileStorageService;
 
     @PostMapping("/login") // Endpoint de login
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request, HttpServletResponse response) {
         Restaurante restauranteLogado = restauranteService.loginRestaurante(loginRequest);
 
         if (restauranteLogado != null) {
+            // Cria principal e autenticação para a sessão do Spring Security
+            UserDetails principal = User
+                    .withUsername(restauranteLogado.getEmail())
+                    .password("N/A")
+                    .roles("USER")
+                    .build();
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+
+            SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+            securityContext.setAuthentication(authentication);
+            SecurityContextHolder.setContext(securityContext);
+
+            // Garante a criação da sessão e a emissão do cookie JSESSIONID e persiste o contexto
+            request.getSession(true);
+            org.springframework.security.web.context.HttpSessionSecurityContextRepository repo =
+                    new org.springframework.security.web.context.HttpSessionSecurityContextRepository();
+            repo.saveContext(securityContext, request, response);
+
             // Login bem-sucedido: retorna os dados do restaurante
             return ResponseEntity.ok(restauranteLogado);
         } else {

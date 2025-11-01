@@ -42,6 +42,19 @@ public class PedidoController {
         return ResponseEntity.ok(pedidos);
     }
 
+    @GetMapping("/restaurante")
+    public ResponseEntity<?> listarPedidosRestaurante(@AuthenticationPrincipal UserDetails principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "É necessário estar logado."));
+        }
+        try {
+            List<Pedido> pedidos = pedidoService.listarPedidosDoRestaurante(principal.getUsername());
+            return ResponseEntity.ok(pedidos);
+        } catch (InputMismatchException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @PutMapping("/{id}/status")
     public ResponseEntity<?> atualizarStatus(@PathVariable Long id, @RequestParam String status, @AuthenticationPrincipal UserDetails principal) {
         if (principal == null) {
@@ -49,6 +62,19 @@ public class PedidoController {
         }
         try {
             Pedido atualizado = pedidoService.atualizarStatus(id, status, principal.getUsername());
+            return ResponseEntity.ok(atualizado);
+        } catch (InputMismatchException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/status-restaurante")
+    public ResponseEntity<?> atualizarStatusRestaurante(@PathVariable Long id, @RequestParam String status, @AuthenticationPrincipal UserDetails principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "É necessário estar logado."));
+        }
+        try {
+            Pedido atualizado = pedidoService.atualizarStatusPorRestaurante(id, status, principal.getUsername());
             return ResponseEntity.ok(atualizado);
         } catch (InputMismatchException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));

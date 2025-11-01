@@ -41,10 +41,7 @@ public class SecurityConfig {
                         // Garante que pedidos exijam autenticação
                         .anyRequest().authenticated()
                 )
-                .formLogin(form -> form
-                        .loginProcessingUrl("/login")
-                        .permitAll()
-                )
+                .httpBasic(basic -> basic.disable())
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .deleteCookies("JSESSIONID")
@@ -63,16 +60,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Permite credenciais
+        // Permite TODAS as origens (projeto acadêmico - aceita apps externos, web, mobile, desktop)
+        configuration.addAllowedOriginPattern("*");
+        
+        // Permite credenciais (cookies, auth headers) - necessário para sessões e autenticação
+        // addAllowedOriginPattern("*") permite usar credenciais, diferente de setAllowedOrigins("*")
         configuration.setAllowCredentials(true);
-
-        // Lista específica de origens permitidas (mais seguro)
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:8081",
-                "http://127.0.0.1:8081",
-                "http://localhost:3000",
-                "http://127.0.0.1:3000"
-        ));
 
         // Métodos permitidos
         configuration.setAllowedMethods(Arrays.asList(

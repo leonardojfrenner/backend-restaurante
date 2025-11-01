@@ -1,7 +1,6 @@
 package br.restaurante.model;
 
 import jakarta.persistence.*;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,10 +15,12 @@ public class Pedido {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "cliente_id")
+    @JsonIgnoreProperties({"senha"})
     private Cliente cliente;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "restaurante_id")
+    @JsonIgnoreProperties({"senha", "avaliacoes"})
     private Restaurante restaurante;
 
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)

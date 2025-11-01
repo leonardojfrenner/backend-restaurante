@@ -14,7 +14,8 @@ public class WebConfig implements WebMvcConfigurer {
 	@Override
 	public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
 		Path uploadDir = Paths.get("uploads").toAbsolutePath().normalize();
-		String location = uploadDir.toUri().toString();
+		// Usa file:// para garantir que funcione em containers Docker
+		String location = "file:" + uploadDir.toString().replace("\\", "/") + "/";
 		registry.addResourceHandler("/uploads/**")
 			.addResourceLocations(location);
 	}

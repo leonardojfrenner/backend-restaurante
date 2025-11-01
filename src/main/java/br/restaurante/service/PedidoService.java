@@ -67,11 +67,27 @@ public class PedidoService {
         return pedidoRepository.findByClienteOrderByCriadoEmDesc(cliente);
     }
 
+    public List<Pedido> listarPedidosDoRestaurante(String emailRestaurante) {
+        Restaurante restaurante = restauranteRepository.findByEmail(emailRestaurante)
+                .orElseThrow(() -> new InputMismatchException("Restaurante não encontrado."));
+        return pedidoRepository.findByRestauranteOrderByCriadoEmDesc(restaurante);
+    }
+
     public Pedido atualizarStatus(Long idPedido, String status, String emailCliente) {
         Pedido pedido = pedidoRepository.findById(idPedido)
                 .orElseThrow(() -> new InputMismatchException("Pedido não encontrado."));
         if (!pedido.getCliente().getEmail().equalsIgnoreCase(emailCliente)) {
             throw new InputMismatchException("Pedido não pertence ao cliente logado.");
+        }
+        pedido.setStatus(status);
+        return pedidoRepository.save(pedido);
+    }
+
+    public Pedido atualizarStatusPorRestaurante(Long idPedido, String status, String emailRestaurante) {
+        Pedido pedido = pedidoRepository.findById(idPedido)
+                .orElseThrow(() -> new InputMismatchException("Pedido não encontrado."));
+        if (!pedido.getRestaurante().getEmail().equalsIgnoreCase(emailRestaurante)) {
+            throw new InputMismatchException("Pedido não pertence ao restaurante logado.");
         }
         pedido.setStatus(status);
         return pedidoRepository.save(pedido);
